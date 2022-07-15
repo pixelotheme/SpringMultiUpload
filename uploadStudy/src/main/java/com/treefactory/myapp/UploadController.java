@@ -1,6 +1,7 @@
 package com.treefactory.myapp;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -124,7 +125,21 @@ public class UploadController {
 		
 	}
 	
-	
+	//파일이 이미지타입인지 검사
+	private Boolean checkImageType(File file) {
+		
+		try {
+			//probeContentType - Mime타입을 확인하지못하면 null을 반환한다(내용이 아니라 파일 확장자를 이용하면 판단함)
+			//MIME 란 파일변환은 이야기한다
+			String contentType = Files.probeContentType(file.toPath());
+			//마입 타입 - 파일의 종류(image)/ 파일포맷(.gif or .jpg)
+			return contentType.startsWith("image");
+		}catch (Exception e) {
+			
+			e.printStackTrace();
+		}
 
+	return false;
+	}
 	
 }

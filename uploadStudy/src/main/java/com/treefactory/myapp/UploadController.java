@@ -1,6 +1,7 @@
 package com.treefactory.myapp;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.log4j.Log4j;
+import net.coobird.thumbnailator.Thumbnailator;
 
 @Controller
 @Log4j
@@ -110,14 +112,29 @@ public class UploadController {
 			uploadFileName = uuid.toString() + "_"+uploadFileName;
 			
 //			File saveFile = new File(uploadFolder, uploadFileName);
-			//년,월,일 포함된 위치로 저장
-			File saveFile = new File(uploadPath, uploadFileName);
 			
 			try {
+				//년,월,일 포함된 위치로 저장
+				File saveFile = new File(uploadPath, uploadFileName);
+				
 				multipartFile.transferTo(saveFile);
+			
+				//check image type file (이미지파일이면 s_ 라고 앞에 붙여서 저장시킨다)
+				if(checkImageType(saveFile)) {
+					//이름에 s_ 를 붙여 File타입으로 만든것을 파일로 작성(저장한다) / 이름이 같으면 덮으씌우기떄문에 구분하기위해서라도 이름을 추가해줌
+					FileOutputStream thumbnail = new FileOutputStream(new File(uploadPath, "s_"+ uploadFileName));
+					//Thumbnailator 는 inputStream(기존에 저장한 파일을 읽어온다), File(새롭게 저장한 파일) 객체를 이용해 파일을 생성 가능 + 파라미터 뒤에 2개로 width,height 를 설정 가능
+					Thumbnailator.createThumbnail(multipartFile.getInputStream(), thumbnail, 100, 100);
+					
+					thumbnail.close();
+				}
+				
 			} catch (Exception e) {
+				e.printStackTrace();
 				log.error(e.getMessage());
+			
 			}//end catch
+			
 			
 		}//end for
 		
@@ -130,12 +147,13 @@ public class UploadController {
 		
 		try {
 			//probeContentType - Mime타입을 확인하지못하면 null을 반환한다(내용이 아니라 파일 확장자를 이용하면 판단함)
-			//MIME 란 파일변환은 이야기한다
+			//MIME 란 파일변환은 이야기한다, file.toPath()는 path 타입으로 바꾸는 메서드 - ex)c:\sample\sample.txt
+			//path 의 메서드를 이용하면 상위폴더가 무엇인지, 경로 단계 수가 얼마인지 알수있다
 			String contentType = Files.probeContentType(file.toPath());
 			//마입 타입 - 파일의 종류(image)/ 파일포맷(.gif or .jpg)
 			return contentType.startsWith("image");
 		}catch (Exception e) {
-			
+			//이미파일 아니면 에러남
 			e.printStackTrace();
 		}
 
